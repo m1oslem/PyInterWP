@@ -10,7 +10,6 @@ import traceback
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # إضافة دعم CORS
 
-# ... باقي الكود كما هو
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
@@ -81,4 +80,8 @@ def simplify_error_message(error_msg):
         return error_msg
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # الحصول على رقم المنفذ من متغير البيئة أو استخدام المنفذ الافتراضي 10000
+    port = int(os.environ.get('PORT', 10000))
+    
+    # تشغيل التطبيق على العنوان 0.0.0.0 للسماح بالوصول من أي عنوان IP
+    app.run(host='0.0.0.0', port=port, debug=True)

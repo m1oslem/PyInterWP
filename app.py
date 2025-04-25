@@ -1,16 +1,13 @@
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS  # تأكد من تثبيت هذه المكتبة: pip install flask-cors
+from flask_cors import CORS
 import subprocess
 import tempfile
 import os
 import sys
-import io
-import traceback
 
 app = Flask(__name__, static_folder='.', static_url_path='')
-CORS(app)  # إضافة دعم CORS
+CORS(app)
 
-# ... باقي الكود كما هو
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
@@ -23,13 +20,11 @@ def run_python():
     if not code:
         return jsonify({'error': 'لم يتم توفير أي كود للتنفيذ'})
     
-    # إنشاء ملف مؤقت للكود
     with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as temp_file:
         temp_file_name = temp_file.name
         temp_file.write(code.encode('utf-8'))
     
     try:
-        # تنفيذ الكود في عملية منفصلة مع تحديد مهلة زمنية
         process = subprocess.Popen(
             [sys.executable, temp_file_name],
             stdout=subprocess.PIPE,
@@ -38,14 +33,10 @@ def run_python():
             encoding='utf-8'
         )
         
-        # انتظار انتهاء العملية مع تحديد مهلة زمنية (5 ثوانٍ)
         stdout, stderr = process.communicate(timeout=5)
-        
-        # إزالة الملف المؤقت
         os.unlink(temp_file_name)
         
         if stderr:
-            # تبسيط رسالة الخطأ
             error_message = simplify_error_message(stderr)
             return jsonify({'error': error_message})
         
@@ -62,7 +53,6 @@ def run_python():
         return jsonify({'error': str(e)})
 
 def simplify_error_message(error_msg):
-    """تبسيط رسائل الخطأ وترجمتها للعربية"""
     if 'SyntaxError' in error_msg:
         return 'خطأ في بناء الجملة: تأكد من كتابة الكود بشكل صحيح'
     elif 'NameError' in error_msg:
@@ -81,4 +71,5 @@ def simplify_error_message(error_msg):
         return error_msg
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+    port = int(os.environ.get('PORT', 5050))
+    app.run(host='0.0.0.0', port=port)

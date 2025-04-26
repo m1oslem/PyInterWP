@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS  # تأكد من تثبيت هذه المكتبة: pip install flask-cors
 import subprocess
 import tempfile
@@ -6,9 +6,16 @@ import os
 import sys
 import io
 import traceback
+import uuid
+import werkzeug
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # إضافة دعم CORS
+
+# إنشاء مجلد للملفات المرفوعة إذا لم يكن موجودًا
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 @app.route('/')
 def index():
@@ -38,7 +45,7 @@ def run_python():
         )
         
         # انتظار انتهاء العملية مع تحديد مهلة زمنية (5 ثوانٍ)
-        stdout, stderr = process.communicate(timeout=500)
+        stdout, stderr = process.communicate(timeout=5)
         
         # إزالة الملف المؤقت
         os.unlink(temp_file_name)
@@ -60,6 +67,36 @@ def run_python():
             os.unlink(temp_file_name)
         return jsonify({'error': str(e)})
 
+@app.route('/upload-file', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'لم يتم توفير أي ملف للرفع'})
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'لم يتم اختيار أي ملف'})
+    
+    if file:
+        # إنشاء اسم فريد للملف
+        filename = str(uuid.uuid4()) + '_' + werkzeug.utils.secure_filename(file.filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        
+        # حفظ الملف
+        file.save(file_path)
+        
+        # إرجاع معلومات الملف
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'original_name': file.filename,
+            'file_path': '/uploads/' + filename
+        })
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
 def simplify_error_message(error_msg):
     """تبسيط رسائل الخطأ وترجمتها للعربية"""
     if 'SyntaxError' in error_msg:
@@ -80,8 +117,4 @@ def simplify_error_message(error_msg):
         return error_msg
 
 if __name__ == '__main__':
-    # الحصول على رقم المنفذ من متغير البيئة أو استخدام المنفذ الافتراضي 10000
-    port = int(os.environ.get('PORT', 10000))
-    
-    # تشغيل التطبيق على العنوان 0.0.0.0 للسماح بالوصول من أي عنوان IP
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True, port=5050)

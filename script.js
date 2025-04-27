@@ -67,7 +67,163 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('run-button').addEventListener('click', function() {
         runCode();
     });
+    
+    // إضافة مستمع حدث لزر رفع الملفات
+    document.getElementById('upload-button').addEventListener('click', function() {
+        document.getElementById('file-upload').click();
+    });
+    
+    // إضافة مستمع حدث لتغيير الملف المرفوع
+    document.getElementById('file-upload').addEventListener('change', function(event) {
+        handleFileUpload(event);
+    });
+    
+    // دالة للتعامل مع رفع الملفات
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const fileList = document.getElementById('file-list');
+        const uploadedFilesContainer = document.getElementById('uploaded-files-container');
+        const imagePreview = document.getElementById('image-preview');
+        
+        // إظهار حاوية الملفات المرفوعة
+        uploadedFilesContainer.style.display = 'block';
+        
+        // إنشاء عنصر جديد للملف
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        
+        // إضافة اسم الملف
+        const fileName = document.createElement('span');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+        fileItem.appendChild(fileName);
+        
+        // إضافة أزرار الإجراءات
+        const fileActions = document.createElement('div');
+        fileActions.className = 'file-actions';
+        
+        // زر استخدام الملف
+        const useButton = document.createElement('button');
+        useButton.className = 'file-action-button use';
+        useButton.innerHTML = '<i class="fas fa-code"></i>';
+        useButton.title = 'استخدام في الكود';
+        useButton.addEventListener('click', function() {
+            useFileInCode(file);
+        });
+        fileActions.appendChild(useButton);
+        
+        // زر حذف الملف
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'file-action-button delete';
+        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteButton.title = 'حذف الملف';
+        deleteButton.addEventListener('click', function() {
+            fileItem.remove();
+            imagePreview.innerHTML = '';
+            if (fileList.children.length === 0) {
+                uploadedFilesContainer.style.display = 'none';
+            }
+        });
+        fileActions.appendChild(deleteButton);
+        
+        fileItem.appendChild(fileActions);
+        fileList.appendChild(fileItem);
+        
+        // عرض معاينة الصورة إذا كان الملف صورة
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = file.name;
+                imagePreview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.innerHTML = '';
+        }
+        
+        // إعادة تعيين حقل الملف
+        event.target.value = '';
+    }
+    
+    // دالة لاستخدام الملف في الكود
+    function useFileInCode(file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            let fileContent = e.target.result;
+            let codeToInsert = '';
+            
+            if (file.type.startsWith('image/')) {
+                // إذا كان الملف صورة، أضف كود لفتح الصورة باستخدام OpenCV أو PIL
+                codeToInsert = `
+# استيراد المكتبات اللازمة للتعامل مع الصور
+import numpy as np
+from PIL import Image
+import io
 
+# تحميل الصورة من الملف المرفوع
+image_data = """${fileContent}"""
+image_bytes = io.BytesIO(image_data.encode('utf-8').split(b',')[1])
+img = Image.open(image_bytes)
+
+# عرض معلومات الصورة
+print(f"حجم الصورة: {img.size}")
+print(f"وضع الصورة: {img.mode}")
+
+# يمكنك إجراء المزيد من العمليات على الصورة هنا
+# مثال: تحويل الصورة إلى مصفوفة NumPy
+img_array = np.array(img)
+print(f"شكل مصفوفة الصورة: {img_array.shape}")
+`;
+            } else if (file.name.endsWith('.py')) {
+                // إذا كان ملف بايثون، أضف استيراد للملف
+                codeToInsert = `
+# استيراد الكود من الملف المرفوع
+${fileContent}
+`;
+            } else if (file.name.endsWith('.csv')) {
+                // إذا كان ملف CSV، أضف كود لقراءة البيانات
+                codeToInsert = `
+# استيراد المكتبات اللازمة للتعامل مع ملفات CSV
+import pandas as pd
+import io
+
+# قراءة بيانات CSV من الملف المرفوع
+csv_data = """${fileContent}"""
+df = pd.read_csv(io.StringIO(csv_data))
+
+# عرض البيانات
+print(df.head())
+print(f"عدد الصفوف: {df.shape[0]}")
+print(f"عدد الأعمدة: {df.shape[1]}")
+`;
+            } else {
+                // للملفات النصية العادية
+                codeToInsert = `
+# قراءة البيانات من الملف المرفوع
+file_content = """${fileContent}"""
+
+# عرض محتوى الملف
+print(file_content)
+`;
+            }
+            
+            // إدراج الكود في المحرر
+            codeEditor.setValue(codeToInsert);
+        };
+        
+        if (file.type.startsWith('image/')) {
+            reader.readAsDataURL(file);
+        } else {
+            reader.readAsText(file);
+        }
+    }
+    
     // دالة لتنفيذ الكود
     function runCode() {
         const code = codeEditor.getValue();

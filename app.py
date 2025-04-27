@@ -6,11 +6,18 @@ import os
 import sys
 import io
 import traceback
+import base64
+from PIL import Image
+import numpy as np
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # إضافة دعم CORS
 
-# ... باقي الكود كما هو
+# تكوين مجلد للملفات المرفوعة
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
@@ -59,6 +66,81 @@ def run_python():
     except Exception as e:
         if os.path.exists(temp_file_name):
             os.unlink(temp_file_name)
+        return jsonify({'error': str(e)})
+
+@app.route('/upload-file', methods=['POST'])
+def upload_file():
+    """معالجة رفع الملفات"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'لم يتم توفير ملف'})
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'لم يتم اختيار ملف'})
+    
+    # حفظ الملف في المجلد المؤقت
+    filename = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filename)
+    
+    # إرجاع معلومات الملف
+    file_info = {
+        'filename': file.filename,
+        'path': filename,
+        'size': os.path.getsize(filename),
+        'type': file.content_type
+    }
+    
+    return jsonify({'success': True, 'file': file_info})
+
+@app.route('/process-image', methods=['POST'])
+def process_image():
+    """معالجة الصور المرفوعة"""
+    data = request.json
+    image_data = data.get('image_data', '')
+    operation = data.get('operation', 'info')
+    
+    try:
+        # استخراج بيانات الصورة من Base64
+        image_data = image_data.split(',')[1]
+        image_bytes = base64.b64decode(image_data)
+        
+        # فتح الصورة باستخدام PIL
+        img = Image.open(io.BytesIO(image_bytes))
+        
+        result = {
+            'width': img.width,
+            'height': img.height,
+            'mode': img.mode,
+        }
+        
+        # تنفيذ العملية المطلوبة على الصورة
+        if operation == 'grayscale':
+            # تحويل الصورة إلى تدرج رمادي
+            img = img.convert('L')
+            buffered = io.BytesIO()
+            img.save(buffered, format="PNG")
+            result['processed_image'] = 'data:image/png;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
+            
+        elif operation == 'resize':
+            # تغيير حجم الصورة
+            width = data.get('width', img.width // 2)
+            height = data.get('height', img.height // 2)
+            img = img.resize((width, height))
+            buffered = io.BytesIO()
+            img.save(buffered, format="PNG")
+            result['processed_image'] = 'data:image/png;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
+            
+        elif operation == 'rotate':
+            # تدوير الصورة
+            angle = data.get('angle', 90)
+            img = img.rotate(angle)
+            buffered = io.BytesIO()
+            img.save(buffered, format="PNG")
+            result['processed_image'] = 'data:image/png;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
+        
+        return jsonify({'success': True, 'result': result})
+        
+    except Exception as e:
         return jsonify({'error': str(e)})
 
 def simplify_error_message(error_msg):

@@ -35,6 +35,10 @@ print(np.sum(arr))
         
         <div class="editor-controls">
             <button id="run-button" class="run-button"><i class="fas fa-play"></i> تشغيل</button>
+            <div class="file-upload-container">
+                <button id="upload-button" class="upload-button"><i class="fas fa-upload"></i> رفع ملف</button>
+                <input type="file" id="file-upload" accept=".py,.txt,.csv,.jpg,.jpeg,.png" style="display: none;">
+            </div>
         </div>
         
         <div class="output-area">
@@ -46,6 +50,11 @@ print(np.sum(arr))
                 <pre id="output-text">النتائج ستظهر هنا...</pre>
             </div>
             <div id="validation-result" class="validation-result"></div>
+            <div id="uploaded-files-container" class="uploaded-files-container" style="display: none;">
+                <h3>الملفات المرفوعة</h3>
+                <div id="file-list"></div>
+                <div id="image-preview"></div>
+            </div>
         </div>
     </div>
 

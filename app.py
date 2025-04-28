@@ -39,7 +39,7 @@ def run_python():
         )
         
         # انتظار انتهاء العملية مع تحديد مهلة زمنية (5 ثوانٍ)
-        stdout, stderr = process.communicate(timeout=5)
+        stdout, stderr = process.communicate(timeout=120)
         
         # إزالة الملف المؤقت
         os.unlink(temp_file_name)

@@ -11,34 +11,15 @@
 <body>
     <div class="python-editor-container">
         <div class="editor-header">
-            <h2 id="exercise-title">التمرين: استخدام NumPy لإنشاء مصفوفة</h2>
-            <div class="header-buttons">
-                <button id="hint-button" class="hint-button"><i class="fas fa-lightbulb"></i> تلميح</button>
-                <button id="solution-button" class="solution-button"><i class="fas fa-check"></i> الحل</button>
-            </div>
-        </div>
-        
-        <div id="hint-container" class="hint-container" style="display: none;">
-            <p id="hint-text">استخدم دالة np.arange() لإنشاء مصفوفة من 1 إلى 10</p>
+            <h2 id="exercise-title">محرر بايثون التفاعلي</h2>
         </div>
         
         <div class="editor-area">
-            <textarea id="code-editor">import numpy as np
-
-# أنشئ مصفوفة من 1 إلى 10
-arr = np.arange(1, 11)
-
-# احسب مجموع المصفوفة
-print(np.sum(arr))
-</textarea>
+            <textarea id="code-editor">print('hello world')</textarea>
         </div>
         
         <div class="editor-controls">
             <button id="run-button" class="run-button"><i class="fas fa-play"></i> تشغيل</button>
-            <div class="file-upload-container">
-                <button id="upload-button" class="upload-button"><i class="fas fa-upload"></i> رفع ملف</button>
-                <input type="file" id="file-upload" accept=".py,.txt,.csv,.jpg,.jpeg,.png" style="display: none;">
-            </div>
         </div>
         
         <div class="output-area">
@@ -48,12 +29,6 @@ print(np.sum(arr))
             </div>
             <div id="output-container">
                 <pre id="output-text">النتائج ستظهر هنا...</pre>
-            </div>
-            <div id="validation-result" class="validation-result"></div>
-            <div id="uploaded-files-container" class="uploaded-files-container" style="display: none;">
-                <h3>الملفات المرفوعة</h3>
-                <div id="file-list"></div>
-                <div id="image-preview"></div>
             </div>
         </div>
     </div>
